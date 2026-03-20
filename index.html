@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoLive AI — Trouvez votre véhicule</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --noir: #09090e;
+    --noir2: #0f0f18;
+    --panel: #14141e;
+    --panel2: #1a1a26;
+    --border: #252535;
+    --border2: #2e2e45;
+    --or: #c8a84a;
+    --or2: #e8d080;
+    --or-glow: rgba(200,168,74,0.12);
+    --rouge: #e84040;
+    --vert: #28c976;
+    --bleu: #4a9eff;
+    --texte: #ededf5;
+    --texte-dim: #8888a0;
+    --texte-faint: #40405a;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Playfair Display', serif;
+    --sans: 'Sora', sans-serif;
+    --radius: 6px;
+    --transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--noir);
+    color: var(--texte);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ─── UTILS ─── */
+  .hidden { display: none !important; }
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 10px; border-radius: 3px;
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+  }
+  .badge-or { background: var(--or-glow); color: var(--or); border: 1px solid rgba(200,168,74,0.3); }
+  .badge-vert { background: rgba(40,201,118,0.1); color: var(--vert); border: 1px solid rgba(40,201,118,0.3); }
+  .badge-rouge { background: rgba(232,64,64,0.1); color: var(--rouge); border: 1px solid rgba(232,64,64,0.3); }
+  .badge-bleu { background: rgba(74,158,255,0.1); color: var(--bleu); border: 1px solid rgba(74,158,255,0.3); }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    background: rgba(9,9,14,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+  }
+
+  .nav-logo {
+    font-family: var(--serif); font-size: 20px; color: var(--or);
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+  }
+
+  .nav-logo .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--or); }
+
+  .nav-links {
+    display: flex; gap: 8px;
+  }
+
+  .nav-link {
+    padding: 7px 16px; border-radius: var(--radius);
+    font-size: 13px; color: var(--texte-dim); cursor: pointer;
+    transition: all var(--transition); border: 1px solid transparent;
+  }
+
+  .nav-link:hover { color: var(--texte); background: var(--panel); }
+
+  .nav-cta {
+    padding: 8px 20px; border-radius: var(--radius);
+    background: var(--or); color: var(--noir);
+    font-weight: 700; font-size: 13px; cursor: pointer;
+    transition: all var(--transition); border: none;
+  }
+
+  .nav-cta:hover { background: var(--or2); transform: translateY(-1px); }
+
+  /* ─── PAGES ─── */
+  .page { display: none; padding-top: 60px; min-height: 100vh; animation: fadeIn 0.3s ease; }
+  .page.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ══════════════════════════════════
+     PAGE : ACCUEIL
+  ══════════════════════════════════ */
+  .hero-section {
+    min-height: calc(100vh - 60px);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+    background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(200,168,74,0.07) 0%, transparent 70%);
+  }
+
+  .hero-bg-grid {
+    position: absolute; inset: 0; z-index: 0;
+    background-image: linear-gradient(var(--border) 1px, transparent 1px),
+                      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.3;
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 20%, transparent 80%);
+  }
+
+  .hero-content {
+    position: relative; z-index: 1;
+    text-align: center; padding: 40px 24px;
+    max-width: 800px; margin: 0 auto;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.15em; color: var(--or);
+    border: 1px solid var(--or-glow); padding: 5px 14px; border-radius: 2px;
+    margin-bottom: 24px;
+    animation: slideDown 0.6s ease both;
+  }
+
+  .hero-eyebrow .pulse {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--vert);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.4); }
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-title {
+    font-family: var(--serif);
+    font-size: clamp(42px, 6vw, 76px);
+    font-weight: 700; line-height: 1.1; margin-bottom: 20px;
+    animation: slideDown 0.6s 0.1s ease both;
+  }
+
+  .hero-title .gold { color: var(--or); }
+  .hero-title .italic { font-style: italic; }
+
+  .hero-sub {
+    font-size: 16px; color: var(--texte-dim);
+    max-width: 520px; margin: 0 auto 40px;
+    line-height: 1.7;
+    animation: slideDown 0.6s 0.2s ease both;
+  }
+
+  /* Search Widget */
+  .search-widget {
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 6px;
+    display: flex; gap: 6px; align-items: stretch;
+    max-width: 600px; margin: 0 auto 40px;
+    animation: slideDown 0.6s 0.3s ease both;
+    box-shadow: 0 0 60px rgba(200,168,74,0.05);
+  }
+
+  .search-widget:focus-within {
+    border-color: rgba(200,168,74,0.4);
+    box-shadow: 0 0 60px rgba(200,168,74,0.1);
+  }
+
+  .search-input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--texte); font-size: 14px; font-family: var(--sans);
+    padding: 12px 16px;
+  }
+
+  .search-input::placeholder { color: var(--texte-faint); }
+
+  .search-btn {
+    background: var(--or); color: var(--noir);
+    border: none; padding: 12px 24px; border-radius: 4px;
+    font-weight: 700; font-size: 14px; cursor: pointer;
+    font-family: var(--sans);
+    transition: all var(--transition);
+    white-space: nowrap;
+  }
+
+  .search-btn:hover { background: var(--or2); }
+
+  .search-suggestions {
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+    animation: slideDown 0.6s 0.4s ease both;
+    margin-bottom: 48px;
+  }
+
+  .suggestion-chip {
+    padding: 6px 14px; border-radius: 20px;
+    background: var(--panel); border: 1px solid var(--border);
+    font-size: 12px; color: var(--texte-dim); cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  .suggestion-chip:hover {
+    border-color: var(--or); color: var(--or); background: var(--or-glow);
+  }
+
+  /* Stats row */
+  .hero-stats {
+    display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+    animation: slideDown 0.6s 0.5s ease both;
+  }
+
+  .stat { text-align: center; }
+  .stat-val {
+    font-family: var(--serif); font-size: 32px; color: var(--or);
+    line-height: 1;
+  }
+  .stat-label { font-size: 11px; color: var(--texte-faint); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* Featured vehicles */
+  .section-title {
+    font-family: var(--serif); font-size: 28px; color: var(--texte);
+    margin-bottom: 8px;
+  }
+  .section-sub { font-size: 14px; color: var(--texte-dim); margin-bottom: 28px; }
+
+  .section-label {
+    font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.15em; color: var(--or); margin-bottom: 6px;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+  .section-block { padding: 64px 0; }
+
+  .vehicles-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+
+  /* Vehicle Card */
+  .v-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden; cursor: pointer;
+    transition: all var(--transition);
+    position: relative;
+  }
+
+  .v-card:hover {
+    border-color: var(--or);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 30px rgba(200,168,74,0.05);
+  }
+
+  .v-card-image {
+    height: 200px; overflow: hidden; position: relative;
+    background: var(--panel2);
+  }
+
+  .v-card-image img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+
+  .v-card:hover .v-card-image img { transform: scale(1.04); }
+
+  .v-card-badge {
+    position: absolute; top: 12px; left: 12px;
+  }
+
+  .v-card-fav {
+    position: absolute; top: 12px; right: 12px;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(9,9,14,0.7); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; cursor: pointer; transition: all var(--transition);
+  }
+
+  .v-card-fav:hover { background: var(--rouge); border-color: var(--rouge); }
+
+  .v-card-body { padding: 18px; }
+
+  .v-card-name {
+    font-size: 16px; font-weight: 600; color: var(--texte); margin-bottom: 4px;
+  }
+
+  .v-card-meta {
+    font-size: 12px; color: var(--texte-faint); margin-bottom: 14px;
+    font-family: var(--mono);
+  }
+
+  .v-card-specs {
+    display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+
+  .spec {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 12px; color: var(--texte-dim);
+  }
+
+  .spec-icon { font-size: 13px; }
+
+  .v-card-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 14px; border-top: 1px solid var(--border);
+  }
+
+  .v-price {
+    font-family: var(--serif); font-size: 22px; color: var(--or);
+  }
+
+  .v-deposit { font-size: 11px; color: var(--texte-faint); font-family: var(--mono); }
+
+  .btn-reserve {
+    background: var(--or); color: var(--noir);
+    border: none; padding: 9px 18px; border-radius: 4px;
+    font-weight: 700; font-size: 12px; cursor: pointer;
+    font-family: var(--sans); transition: all var(--transition);
+  }
+
+  .btn-reserve:hover { background: var(--or2); transform: translateY(-1px); }
+
+  /* ── AI Score bar ── */
+  .ai-match { margin-bottom: 10px; }
+  .ai-match-label {
+    font-family: var(--mono); font-size: 10px; color: var(--or);
+    margin-bottom: 5px; display: flex; justify-content: space-between;
+  }
+  .ai-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .ai-bar-fill { height: 100%; background: linear-gradient(90deg, var(--or), var(--or2)); transition: width 0.8s ease; }
+
+  /* ══════════════════════════════════
+     PAGE : RECHERCHE / RÉSULTATS
+  ══════════════════════════════════ */
+  .search-page { padding: 80px 32px 60px; max-width: 1200px; margin: 0 auto; }
+
+  .filter-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px; margin-bottom: 32px;
+    align-items: end;
+  }
+
+  .filter-group label {
+    display: block; font-size: 11px; font-family: var(--mono);
+    color: var(--texte-faint); text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+
+  .filter-control {
+    width: 100%;
+    background: var(--noir2); border: 1px solid var(--border2);
+    color: var(--texte); font-family: var(--sans); font-size: 13px;
+    padding: 10px 12px; border-radius: 4px; outline: none;
+    transition: border-color var(--transition);
+    appearance: none;
+  }
+
+  .filter-control:focus { border-color: var(--or); }
+
+  select.filter-control {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238888a0' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+    cursor: pointer;
+  }
+
+  .btn-search-full {
+    background: var(--or); color: var(--noir);
+    border: none; padding: 12px 28px; border-radius: 4px;
+    font-weight: 700; font-size: 14px; cursor: pointer;
+    font-family: var(--sans); transition: all var(--transition);
+    width: 100%;
+  }
+
+  .btn-search-full:hover { background: var(--or2); }
+
+  /* Results header */
+  .results-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+  }
+
+  .results-count {
+    font-size: 14px; color: var(--texte-dim);
+  }
+
+  .results-count strong { color: var(--texte); }
+
+  .sort-select {
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--texte-dim); font-size: 12px; font-family: var(--sans);
+    padding: 7px 12px; border-radius: 4px; cursor: pointer; outline: none;
+  }
+
+  /* AI Banner */
+  .ai-banner {
+    background: linear-gradient(135deg, rgba(200,168,74,0.08), rgba(74,158,255,0.05));
+    border: 1px solid rgba(200,168,74,0.2);
+    border-radius: var(--radius); padding: 16px 20px;
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .ai-banner-icon { font-size: 28px; flex-shrink: 0; }
+  .ai-banner-text strong { color: var(--or); }
+  .ai-banner-text { font-size: 13px; color: var(--texte-dim); }
+
+  /* ══════════════════════════════════
+     PAGE : FICHE VÉHICULE
+  ══════════════════════════════════ */
+  .vehicle-page { max-width: 1100px; margin: 0 auto; padding: 80px 32px 60px; }
+
+  .vp-back {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--texte-dim); cursor: pointer;
+    transition: color var(--transition); margin-bottom: 28px;
+  }
+
+  .vp-back:hover { color: var(--or); }
+
+  .vp-layout {
+    display: grid; grid-template-columns: 1fr 380px; gap: 40px;
+  }
+
+  /* Gallery */
+  .vp-gallery { }
+  .vp-main-img {
+    width: 100%; height: 380px; object-fit: cover;
+    border-radius: var(--radius); margin-bottom: 12px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+  }
+  .vp-thumbs { display: flex; gap: 8px; overflow-x: auto; }
+  .vp-thumb {
+    width: 80px; height: 60px; border-radius: 4px;
+    border: 2px solid var(--border); overflow: hidden; cursor: pointer;
+    flex-shrink: 0; transition: border-color var(--transition);
+  }
+  .vp-thumb:hover, .vp-thumb.active { border-color: var(--or); }
+  .vp-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* Vehicle specs panel */
+  .vp-sidebar {
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  .vp-price-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+  }
+
+  .vp-make { font-family: var(--mono); font-size: 11px; color: var(--texte-faint); margin-bottom: 4px; text-transform: uppercase; }
+  .vp-name { font-family: var(--serif); font-size: 26px; color: var(--texte); margin-bottom: 16px; line-height: 1.2; }
+  .vp-main-price { font-family: var(--serif); font-size: 40px; color: var(--or); line-height: 1; }
+  .vp-deposit-info {
+    font-size: 12px; color: var(--texte-dim); margin: 8px 0 20px;
+    font-family: var(--mono);
+  }
+  .vp-deposit-info strong { color: var(--or); }
+
+  .btn-reserve-big {
+    width: 100%; background: var(--or); color: var(--noir);
+    border: none; padding: 16px; border-radius: 4px;
+    font-weight: 700; font-size: 15px; cursor: pointer;
+    font-family: var(--sans); transition: all var(--transition);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+
+  .btn-reserve-big:hover { background: var(--or2); transform: translateY(-2px); }
+
+  .vp-specs-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1px; background: var(--border);
+    border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+  }
+
+  .vp-spec-item {
+    background: var(--panel2); padding: 14px 16px;
+  }
+
+  .vp-spec-key { font-size: 11px; color: var(--texte-faint); margin-bottom: 3px; }
+  .vp-spec-val { font-size: 13px; color: var(--texte); font-weight: 500; }
+
+  /* Services */
+  .vp-services { }
+  .service-item {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 4px; padding: 14px 16px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+    transition: all var(--transition);
+  }
+  .service-item:hover { border-color: var(--or); background: var(--or-glow); }
+  .service-icon { font-size: 20px; }
+  .service-text strong { display: block; font-size: 13px; color: var(--texte); }
+  .service-text span { font-size: 11px; color: var(--texte-dim); }
+  .service-check { margin-left: auto; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; transition: all var(--transition); }
+  .service-item.checked .service-check { background: var(--vert); border-color: var(--vert); }
+
+  /* Description */
+  .vp-description {
+    margin-top: 32px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+  }
+  .vp-description h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: var(--texte); }
+  .vp-description p { font-size: 13px; color: var(--texte-dim); line-height: 1.8; }
+  .vp-features { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .feature-tag {
+    padding: 4px 12px; border-radius: 2px;
+    background: var(--noir2); border: 1px solid var(--border);
+    font-size: 12px; color: var(--texte-dim);
+  }
+
+  /* ══════════════════════════════════
+     PAGE : RÉSERVATION
+  ══════════════════════════════════ */
+  .reservation-page { max-width: 900px; margin: 0 auto; padding: 80px 32px 60px; }
+
+  .res-layout { display: grid; grid-template-columns: 1fr 340px; gap: 32px; }
+
+  .res-form-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px;
+  }
+
+  .res-step-indicator {
+    display: flex; gap: 0; margin-bottom: 32px; border-radius: 4px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .res-step {
+    flex: 1; padding: 10px; text-align: center;
+    font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--texte-faint);
+    background: var(--noir2); border-right: 1px solid var(--border);
+    transition: all var(--transition);
+  }
+
+  .res-step:last-child { border-right: none; }
+  .res-step.active { background: var(--or-glow); color: var(--or); }
+  .res-step.done { background: rgba(40,201,118,0.1); color: var(--vert); }
+
+  .form-section { margin-bottom: 24px; }
+
+  .form-section h3 {
+    font-size: 15px; font-weight: 600; color: var(--texte); margin-bottom: 16px;
+    padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 11px; color: var(--texte-faint); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 7px; }
+  .form-input {
+    width: 100%; background: var(--noir2); border: 1px solid var(--border2);
+    color: var(--texte); font-family: var(--sans); font-size: 13px;
+    padding: 11px 14px; border-radius: 4px; outline: none;
+    transition: border-color var(--transition);
+  }
+  .form-input:focus { border-color: var(--or); }
+
+  /* Payment simulation */
+  .payment-widget {
+    background: var(--noir2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 20px; margin-bottom: 20px;
+  }
+
+  .payment-widget .pw-label {
+    font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.12em; color: var(--texte-faint); margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .pw-stripe { color: var(--bleu); }
+
+  .card-row {
+    display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; margin-bottom: 12px;
+  }
+
+  .card-input {
+    background: var(--panel); border: 1px solid var(--border2);
+    color: var(--texte); font-family: var(--mono); font-size: 13px;
+    padding: 11px 14px; border-radius: 4px; outline: none;
+    transition: border-color var(--transition);
+  }
+  .card-input:focus { border-color: var(--or); }
+  .card-input::placeholder { color: var(--texte-faint); }
+
+  .payment-methods {
+    display: flex; gap: 8px; margin-bottom: 14px;
+  }
+
+  .pm-btn {
+    flex: 1; padding: 9px 12px; border-radius: 4px;
+    border: 1px solid var(--border); background: var(--panel);
+    color: var(--texte-dim); font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: all var(--transition);
+  }
+
+  .pm-btn.active { border-color: var(--or); color: var(--or); background: var(--or-glow); }
+  .pm-btn:hover { border-color: var(--border2); }
+
+  /* Summary card */
+  .res-summary {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+    position: sticky; top: 80px;
+  }
+
+  .res-summary h4 { font-size: 14px; font-weight: 600; color: var(--texte); margin-bottom: 16px; }
+
+  .summary-vehicle {
+    display: flex; gap: 12px; margin-bottom: 16px;
+    padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+
+  .summary-img { width: 72px; height: 56px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+  .summary-name { font-size: 13px; font-weight: 600; color: var(--texte); }
+  .summary-meta { font-size: 11px; color: var(--texte-faint); font-family: var(--mono); }
+
+  .summary-line {
+    display: flex; justify-content: space-between;
+    font-size: 13px; color: var(--texte-dim); margin-bottom: 8px;
+  }
+
+  .summary-line.total {
+    padding-top: 12px; margin-top: 4px; border-top: 1px solid var(--border);
+    font-weight: 600; color: var(--texte); font-size: 15px;
+  }
+
+  .summary-line.total span:last-child { color: var(--or); font-family: var(--serif); font-size: 18px; }
+
+  .res-secure { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--texte-faint); margin-top: 16px; }
+
+  /* ══════════════════════════════════
+     PAGE : CONFIRMATION
+  ══════════════════════════════════ */
+  .confirm-page {
+    min-height: calc(100vh - 60px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 32px;
+  }
+
+  .confirm-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 48px;
+    max-width: 560px; width: 100%; text-align: center;
+    animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .confirm-check {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: rgba(40,201,118,0.15); border: 2px solid var(--vert);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin: 0 auto 24px;
+  }
+
+  .confirm-title { font-family: var(--serif); font-size: 30px; color: var(--texte); margin-bottom: 12px; }
+  .confirm-sub { font-size: 14px; color: var(--texte-dim); margin-bottom: 28px; line-height: 1.6; }
+
+  .confirm-details {
+    background: var(--noir2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 20px; text-align: left; margin-bottom: 28px;
+  }
+
+  .cd-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px; }
+  .cd-row:last-child { margin-bottom: 0; }
+  .cd-row .cd-key { color: var(--texte-faint); }
+  .cd-row .cd-val { color: var(--texte); font-weight: 500; font-family: var(--mono); }
+
+  .confirm-timer {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--or-glow); border: 1px solid rgba(200,168,74,0.3);
+    padding: 10px 20px; border-radius: 4px;
+    font-family: var(--mono); font-size: 13px; color: var(--or);
+    margin-bottom: 24px;
+  }
+
+  .btn-home {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--texte-dim); padding: 12px 28px; border-radius: 4px;
+    font-size: 14px; cursor: pointer; transition: all var(--transition);
+    font-family: var(--sans); margin-top: 8px;
+  }
+
+  .btn-home:hover { border-color: var(--or); color: var(--or); }
+
+  /* ─── BOT TIKTOK BANNER ─── */
+  .tiktok-banner {
+    background: linear-gradient(135deg, #0f0a18, #141020);
+    border-top: 1px solid var(--border);
+    padding: 48px 0;
+  }
+
+  .tiktok-inner {
+    max-width: 900px; margin: 0 auto; padding: 0 32px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+  }
+
+  .tiktok-text .section-label { color: #ff2d55; }
+  .tiktok-text h2 { font-family: var(--serif); font-size: 28px; color: var(--texte); margin-bottom: 12px; }
+  .tiktok-text p { font-size: 14px; color: var(--texte-dim); line-height: 1.7; }
+
+  .tiktok-demo { }
+
+  .tiktok-screen {
+    background: var(--noir2); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+  }
+
+  .tiktok-header {
+    background: var(--panel); padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px; color: var(--texte-faint); font-family: var(--mono);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .tiktok-live-badge {
+    background: var(--rouge); color: white; padding: 1px 6px;
+    border-radius: 2px; font-size: 10px; font-weight: 700;
+  }
+
+  .tiktok-chat { padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+
+  .tc-msg {
+    font-size: 12px; display: flex; gap: 8px; align-items: flex-start;
+  }
+
+  .tc-user { color: var(--or); font-weight: 600; white-space: nowrap; }
+  .tc-text { color: var(--texte-dim); }
+  .tc-bot { color: var(--vert); font-weight: 600; white-space: nowrap; }
+  .tc-bot-text { color: var(--texte); }
+  .tc-link { color: var(--bleu); text-decoration: underline; }
+
+  /* ─── TOAST NOTIFICATION ─── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 20px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--texte);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transition: all 0.3s ease;
+    transform: translateY(80px); opacity: 0;
+    pointer-events: none;
+  }
+
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast .toast-icon { font-size: 18px; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 768px) {
+    nav { padding: 0 16px; }
+    .nav-links { display: none; }
+    .container { padding: 0 16px; }
+    .section-block { padding: 40px 0; }
+    .vp-layout { grid-template-columns: 1fr; }
+    .res-layout { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .tiktok-inner { grid-template-columns: 1fr; gap: 24px; }
+    .card-row { grid-template-columns: 1fr; }
+    .confirm-card { padding: 28px 20px; }
+    .search-page { padding: 80px 16px 40px; }
+    .vehicle-page { padding: 80px 16px 40px; }
+    .reservation-page { padding: 80px 16px 40px; }
+    .hero-title { font-size: 38px; }
+    .hero-stats { gap: 24px; }
+    .filter-panel { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav>
+  <div class="nav-logo" onclick="showPage('home')">
+    <div class="logo-dot"></div>
+    AutoLive AI
+  </div>
+  <div class="nav-links">
+    <div class="nav-link" onclick="showPage('search')">Catalogue</div>
+    <div class="nav-link" onclick="showPage('home')">Comment ça marche</div>
+  </div>
+  <button class="nav-cta" onclick="showPage('search')">Trouver ma voiture</button>
+</nav>
+
+<!-- TOAST -->
+<div id="toast">
+  <span class="toast-icon">⭐</span>
+  <span id="toast-text">Action réalisée</span>
+</div>
+
+<!-- ═══════════════════════════════
+     PAGE : ACCUEIL
+═══════════════════════════════ -->
+<div id="page-home" class="page active">
+
+  <div class="hero-section">
+    <div class="hero-bg-grid"></div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <div class="pulse"></div>
+        Bot TikTok actif · 247 réservations ce mois
+      </div>
+      <h1 class="hero-title">
+        Votre prochaine<br>
+        <span class="gold italic">voiture de rêve</span><br>
+        à portée de budget
+      </h1>
+      <p class="hero-sub">
+        Trouvez le véhicule idéal en quelques secondes. Notre IA analyse votre budget 
+        et vos critères pour vous proposer les meilleures opportunités du stock.
+      </p>
+
+      <div class="search-widget">
+        <input class="search-input" id="hero-search" placeholder='Tapez votre budget ou "SUV 15000€"…'
+          onkeydown="if(event.key==='Enter') doHeroSearch()">
+        <button class="search-btn" onclick="doHeroSearch()">🔍 Rechercher</button>
+      </div>
+
+      <div class="search-suggestions">
+        <span class="suggestion-chip" onclick="quickSearch('budget 8000')">Budget 8 000€</span>
+        <span class="suggestion-chip" onclick="quickSearch('suv 15000')">SUV jusqu'à 15 000€</span>
+        <span class="suggestion-chip" onclick="quickSearch('familiale 7 places')">Voiture familiale</span>
+        <span class="suggestion-chip" onclick="quickSearch('electrique')">Électrique</span>
+        <span class="suggestion-chip" onclick="quickSearch('diesel peu de km')">Diesel peu de km</span>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat"><div class="stat-val">347</div><div class="stat-label">Véhicules disponibles</div></div>
+        <div class="stat"><div class="stat-val">1%</div><div class="stat-label">Acompte seulement</div></div>
+        <div class="stat"><div class="stat-val">48h</div><div class="stat-label">Réservation garantie</div></div>
+        <div class="stat"><div class="stat-val">4.9★</div><div class="stat-label">Satisfaction client</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Featured vehicles -->
+  <div class="container">
+    <div class="section-block">
+      <div class="section-label">Sélection de la semaine</div>
+      <h2 class="section-title">Véhicules en vedette</h2>
+      <p class="section-sub">Nos meilleures opportunités du moment, triées par rapport qualité-prix</p>
+      <div class="vehicles-grid" id="featured-grid"></div>
+    </div>
+  </div>
+
+  <!-- TikTok Bot Banner -->
+  <div class="tiktok-banner">
+    <div class="tiktok-inner">
+      <div class="tiktok-text">
+        <div class="section-label">Bot TikTok Live</div>
+        <h2>Découvrez nos voitures en direct sur TikTok</h2>
+        <p>Commentez votre budget sous nos Lives et notre IA vous répond instantanément avec les véhicules correspondants. Réservez directement depuis le lien reçu.</p>
+        <br>
+        <button class="nav-cta" onclick="showPage('search')" style="font-size: 14px; padding: 12px 24px;">
+          Voir le catalogue →
+        </button>
+      </div>
+      <div class="tiktok-demo">
+        <div class="tiktok-screen">
+          <div class="tiktok-header">
+            <span class="tiktok-live-badge">LIVE</span>
+            @garage_auto77 · 1 243 spectateurs
+          </div>
+          <div class="tiktok-chat">
+            <div class="tc-msg"><span class="tc-user">user_83k :</span><span class="tc-text">c'est magnifique cette BMW 🔥</span></div>
+            <div class="tc-msg"><span class="tc-user">marie_92 :</span><span class="tc-text">budget 10k vous avez quoi ?</span></div>
+            <div class="tc-msg"><span class="tc-bot">🤖 AutoLive :</span><span class="tc-bot-text">@marie_92 3 voitures dans ton budget : Clio V 2020 (9 900€) · 208 2019 (9 500€) · Golf 7 2018 (9 800€) <span class="tc-link">voir →</span></span></div>
+            <div class="tc-msg"><span class="tc-user">karim_91 :</span><span class="tc-text">suv 7 places 15000 ?</span></div>
+            <div class="tc-msg"><span class="tc-bot">🤖 AutoLive :</span><span class="tc-bot-text">@karim_91 SUV 7 places jusqu'à 15k : Peugeot 5008 2019 (14 900€) · Dacia Jogger 2022 (13 500€) <span class="tc-link">voir →</span></span></div>
+            <div class="tc-msg"><span class="tc-user">yasmine_77 :</span><span class="tc-text">electrique moins de 20000 ?</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════
+     PAGE : RECHERCHE
+═══════════════════════════════ -->
+<div id="page-search" class="page">
+  <div class="search-page">
+    <div class="section-label" style="margin-bottom: 6px;">Catalogue</div>
+    <h2 class="section-title" style="margin-bottom: 6px;">Tous nos véhicules</h2>
+
+    <div class="filter-panel" style="margin-top: 20px;">
+      <div class="filter-group">
+        <label>Budget max</label>
+        <select class="filter-control" id="f-budget">
+          <option value="">Tous les budgets</option>
+          <option value="8000">Jusqu'à 8 000€</option>
+          <option value="12000">Jusqu'à 12 000€</option>
+          <option value="15000">Jusqu'à 15 000€</option>
+          <option value="20000">Jusqu'à 20 000€</option>
+          <option value="30000">Jusqu'à 30 000€</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Type de véhicule</label>
+        <select class="filter-control" id="f-type">
+          <option value="">Tous les types</option>
+          <option value="suv">SUV / Crossover</option>
+          <option value="berline">Berline</option>
+          <option value="citadine">Citadine</option>
+          <option value="break">Break</option>
+          <option value="monospace">Monospace</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Énergie</label>
+        <select class="filter-control" id="f-fuel">
+          <option value="">Toutes</option>
+          <option value="essence">Essence</option>
+          <option value="diesel">Diesel</option>
+          <option value="hybride">Hybride</option>
+          <option value="electrique">Électrique</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Km max</label>
+        <select class="filter-control" id="f-km">
+          <option value="">Tous kilométrages</option>
+          <option value="30000">— 30 000 km</option>
+          <option value="60000">— 60 000 km</option>
+          <option value="100000">— 100 000 km</option>
+          <option value="150000">— 150 000 km</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Recherche libre</label>
+        <input class="filter-control" id="f-query" placeholder="Peugeot 3008, BMW…" type="text">
+      </div>
+      <div class="filter-group">
+        <label>&nbsp;</label>
+        <button class="btn-search-full" onclick="filterVehicles()">Appliquer les filtres</button>
+      </div>
+    </div>
+
+    <div id="ai-banner" class="ai-banner hidden">
+      <div class="ai-banner-icon">🤖</div>
+      <div class="ai-banner-text">
+        <strong>Résultats personnalisés par IA :</strong> Basé sur votre recherche "<span id="ai-query-label"></span>", 
+        voici les véhicules qui correspondent le mieux à vos critères.
+      </div>
+    </div>
+
+    <div class="results-header">
+      <div class="results-count"><strong id="results-count">0</strong> véhicules trouvés</div>
+      <select class="sort-select" onchange="sortVehicles(this.value)">
+        <option value="price_asc">Prix croissant</option>
+        <option value="price_desc">Prix décroissant</option>
+        <option value="km_asc">Km croissant</option>
+        <option value="match_desc">Meilleur match IA</option>
+      </select>
+    </div>
+
+    <div class="vehicles-grid" id="search-grid"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     PAGE : FICHE VÉHICULE
+═══════════════════════════════ -->
+<div id="page-vehicle" class="page">
+  <div class="vehicle-page">
+    <div class="vp-back" onclick="showPage('search')">← Retour aux résultats</div>
+    <div class="vp-layout">
+      <!-- Gallery -->
+      <div class="vp-gallery">
+        <img class="vp-main-img" id="vp-main-img" src="" alt="Véhicule">
+        <div class="vp-thumbs" id="vp-thumbs"></div>
+        <div class="vp-description">
+          <h3>Description & équipements</h3>
+          <p id="vp-desc-text"></p>
+          <div class="vp-features" id="vp-features"></div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="vp-sidebar">
+        <div class="vp-price-card">
+          <div class="vp-make" id="vp-make"></div>
+          <div class="vp-name" id="vp-name"></div>
+
+          <div id="vp-ai-match" class="ai-match">
+            <div class="ai-match-label"><span>Correspondance IA</span><span id="vp-ai-pct"></span></div>
+            <div class="ai-bar"><div class="ai-bar-fill" id="vp-ai-bar" style="width:0%"></div></div>
+          </div>
+
+          <div class="vp-main-price" id="vp-price"></div>
+          <div class="vp-deposit-info">Réservez pour <strong id="vp-deposit"></strong> (acompte 1%)</div>
+
+          <button class="btn-reserve-big" onclick="goToReservation()">
+            🔒 Réserver ce véhicule
+          </button>
+        </div>
+
+        <div class="vp-specs-grid" id="vp-specs-grid"></div>
+
+        <!-- Services -->
+        <div class="vp-services">
+          <div style="font-size: 12px; color: var(--texte-faint); margin-bottom: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em;">Services additionnels</div>
+          <div class="service-item" onclick="toggleService(this)">
+            <div class="service-icon">📄</div>
+            <div class="service-text"><strong>Carte grise</strong><span>Dossier complet — 30€</span></div>
+            <div class="service-check">✓</div>
+          </div>
+          <div class="service-item" onclick="toggleService(this)">
+            <div class="service-icon">🚚</div>
+            <div class="service-text"><strong>Livraison convoyeur</strong><span>0,45€/km — Délai 48h</span></div>
+            <div class="service-check">✓</div>
+          </div>
+          <div class="service-item" onclick="toggleService(this)">
+            <div class="service-icon">🚛</div>
+            <div class="service-text"><strong>Transport plateau</strong><span>À partir de 200€</span></div>
+            <div class="service-check">✓</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     PAGE : RÉSERVATION
+═══════════════════════════════ -->
+<div id="page-reservation" class="page">
+  <div class="reservation-page">
+    <div class="vp-back" onclick="showPage('vehicle')">← Retour à la fiche</div>
+    <h2 class="section-title" style="margin-bottom: 24px;">Réservation véhicule</h2>
+
+    <div class="res-layout">
+      <!-- Form -->
+      <div>
+        <div class="res-step-indicator">
+          <div class="res-step active" id="step1">1 — Vos coordonnées</div>
+          <div class="res-step" id="step2">2 — Paiement</div>
+          <div class="res-step" id="step3">3 — Confirmation</div>
+        </div>
+
+        <div class="res-form-card">
+          <!-- Étape 1 -->
+          <div id="form-step-1">
+            <div class="form-section">
+              <h3>Vos informations</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Prénom</label>
+                  <input class="form-input" id="f-prenom" placeholder="Mohamed" type="text">
+                </div>
+                <div class="form-group">
+                  <label>Nom</label>
+                  <input class="form-input" id="f-nom" placeholder="Dupont" type="text">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input class="form-input" id="f-email" placeholder="votre@email.fr" type="email">
+              </div>
+              <div class="form-group">
+                <label>Téléphone</label>
+                <input class="form-input" id="f-tel" placeholder="06 12 34 56 78" type="tel">
+              </div>
+            </div>
+            <button class="btn-search-full" onclick="goToPayment()">
+              Continuer vers le paiement →
+            </button>
+          </div>
+
+          <!-- Étape 2 -->
+          <div id="form-step-2" class="hidden">
+            <div class="form-section">
+              <h3>Mode de paiement</h3>
+              <div class="payment-methods">
+                <button class="pm-btn active" id="pm-cb" onclick="selectPM('cb')">💳 Carte bancaire</button>
+                <button class="pm-btn" id="pm-apple" onclick="selectPM('apple')">🍎 Apple Pay</button>
+                <button class="pm-btn" id="pm-google" onclick="selectPM('google')">G Google Pay</button>
+              </div>
+
+              <div class="payment-widget" id="pm-cb-widget">
+                <div class="pw-label">
+                  <span>Sécurisé par</span><span class="pw-stripe">Stripe</span>
+                  <span style="margin-left: auto;">🔒 3DS2</span>
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label style="font-size: 11px; color: var(--texte-faint); font-family: var(--mono);">Numéro de carte</label>
+                  <input class="card-input" style="width:100%" placeholder="4242 4242 4242 4242" maxlength="19"
+                    oninput="formatCard(this)">
+                </div>
+                <div class="card-row">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-size: 11px; color: var(--texte-faint); font-family: var(--mono);">Expiration</label>
+                    <input class="card-input" placeholder="MM / AA" maxlength="7">
+                  </div>
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label style="font-size: 11px; color: var(--texte-faint); font-family: var(--mono);">CVV</label>
+                    <input class="card-input" placeholder="***" maxlength="3">
+                  </div>
+                  <div></div>
+                </div>
+              </div>
+
+              <div class="payment-widget hidden" id="pm-other-widget" style="text-align:center; padding: 32px;">
+                <div style="font-size: 32px; margin-bottom: 10px;">📲</div>
+                <div style="font-size: 14px; color: var(--texte-dim);">Redirection vers le service de paiement sécurisé...</div>
+              </div>
+            </div>
+            <button class="btn-search-full" onclick="simulatePay()" id="pay-btn">
+              🔒 Payer <span id="pay-amount"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="res-summary">
+        <h4>Récapitulatif</h4>
+        <div class="summary-vehicle">
+          <img class="summary-img" id="sum-img" src="" alt="">
+          <div>
+            <div class="summary-name" id="sum-name"></div>
+            <div class="summary-meta" id="sum-meta"></div>
+          </div>
+        </div>
+        <div class="summary-line"><span>Prix véhicule</span><span id="sum-price"></span></div>
+        <div class="summary-line"><span>Acompte (1%)</span><span id="sum-deposit" style="color: var(--or); font-weight: 600;"></span></div>
+        <div class="summary-line"><span>Carte grise</span><span id="sum-cg">—</span></div>
+        <div class="summary-line"><span>Livraison</span><span>À définir</span></div>
+        <div class="summary-line total"><span>Total dû aujourd'hui</span><span id="sum-total"></span></div>
+        <div class="res-secure">🔒 Paiement sécurisé — Remboursement sous 2h si annulation</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     PAGE : CONFIRMATION
+═══════════════════════════════ -->
+<div id="page-confirm" class="page">
+  <div class="confirm-page">
+    <div class="confirm-card">
+      <div class="confirm-check">✓</div>
+      <div class="confirm-title">Réservation confirmée !</div>
+      <p class="confirm-sub">
+        Votre véhicule est maintenant réservé pour 48 heures. 
+        Le garage vous contactera dans les 2 heures pour confirmer le rendez-vous.
+      </p>
+
+      <div class="confirm-timer">
+        ⏱ Votre réservation expire dans : <strong id="countdown">47:59:53</strong>
+      </div>
+
+      <div class="confirm-details">
+        <div class="cd-row"><span class="cd-key">N° de réservation</span><span class="cd-val" id="res-num">AL-2026-XXXX</span></div>
+        <div class="cd-row"><span class="cd-key">Véhicule</span><span class="cd-val" id="confirm-veh">—</span></div>
+        <div class="cd-row"><span class="cd-key">Acompte payé</span><span class="cd-val" id="confirm-dep">—</span></div>
+        <div class="cd-row"><span class="cd-key">Statut</span><span class="cd-val" style="color: var(--vert);">✓ CONFIRMÉ</span></div>
+        <div class="cd-row"><span class="cd-key">Email</span><span class="cd-val">Confirmation envoyée</span></div>
+      </div>
+
+      <p style="font-size: 12px; color: var(--texte-faint); margin-bottom: 16px;">
+        Le garage vous appellera sous peu. En attendant, vous pouvez ajouter la livraison ou démarrer votre dossier carte grise.
+      </p>
+
+      <button class="nav-cta" style="width: 100%; padding: 14px;" onclick="showPage('home')">
+        Retour à l'accueil
+      </button>
+      <button class="btn-home" style="width: 100%;" onclick="showPage('search')">
+        Voir d'autres véhicules
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   DATA — Catalogue véhicules simulés
+══════════════════════════════════════ */
+const VEHICLES = [
+  {
+    id: 1, make: 'Peugeot', model: '3008 GT Line', year: 2021,
+    price: 24900, km: 28000, fuel: 'diesel', type: 'suv', seats: 5,
+    color: 'Gris Platinium', transmission: 'Automatique', power: 130,
+    aiMatch: 96, status: 'available',
+    img: 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=800&q=80',
+    imgs: [
+      'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=800&q=80',
+      'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=800&q=80',
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80'
+    ],
+    desc: 'Superbe Peugeot 3008 GT Line en excellent état. Véhicule de démonstration, première main, carnet d\'entretien complet. Équipements premium : GPS connecté 10 pouces, caméra 360°, toit ouvrant panoramique, sièges massants.',
+    features: ['GPS 10"', 'Caméra 360°', 'Toit panoramique', 'Régulateur adaptatif', 'Sièges massants', 'Clim bizone', 'Bluetooth', 'Démarrage sans clé']
+  },
+  {
+    id: 2, make: 'Renault', model: 'Clio V Zen', year: 2020,
+    price: 9900, km: 52000, fuel: 'essence', type: 'citadine', seats: 5,
+    color: 'Rouge Flamme', transmission: 'Manuelle', power: 100,
+    aiMatch: 88, status: 'available',
+    img: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&q=80',
+    imgs: [
+      'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&q=80',
+      'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&q=80'
+    ],
+    desc: 'Renault Clio V en parfait état. Carnet d\'entretien à jour. Idéale pour la ville et trajets quotidiens. Économique et fiable.',
+    features: ['Apple CarPlay', 'Android Auto', 'Clim auto', 'Aide au stationnement', 'Caméra recul']
+  },
+  {
+    id: 3, make: 'Volkswagen', model: 'Tiguan Highline', year: 2020,
+    price: 28500, km: 41000, fuel: 'diesel', type: 'suv', seats: 5,
+    color: 'Blanc Nacré', transmission: 'Automatique', power: 150,
+    aiMatch: 91, status: 'available',
+    img: 'https://images.unsplash.com/photo-1546614042-7df3c24c9e5d?w=800&q=80',
+    imgs: [
+      'https://images.unsplash.com/photo-1546614042-7df3c24c9e5d?w=800&q=80',
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80'
+    ],
+    desc: 'Volkswagen Tiguan 2.0 TDI 150ch DSG7 Highline. Véhicule très bien entretenu, toutes options. Idéal pour les longs trajets famille.',
+    features: ['GPS Discover Pro', 'Toit ouvrant', '4Motion AWD', 'Sièges cuir', 'Phares LED Matrix', 'Aide maintien voie', 'Stationnement auto']
+  },
+  {
+    id: 4, make: 'Tesla', model: 'Model 3 Standard+', year: 2022,
+    price: 32000, km: 18000, fuel: 'electrique', type: 'berline', seats: 5,
+    color: 'Noir Nacré', transmission: 'Automatique', power: 283,
+    aiMatch: 79, status: 'available',
+    img: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=800&q=80',
+    imgs: [
+      'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=800&q=80',
+      'https://images.unsplash.com/photo-1536700503174-6f6d0f475d69?w=800&q=80'
+    ],
+    desc: 'Tesla Model 3 Standard Plus en parfait état. Autonomie 448 km WLTP. Logiciel à jour, Autopilot inclus. Économies carburant maximales.',
+    features: ['Autopilot', 'Écran 15"', 'Recharge rapide 170kW', 'Mise à jour OTA', 'Caméra 360°', 'Application mobile', 'Navigation intégrée']
+  },
+  {
+    id: 5, make: 'Peugeot', model: '5008 Allure', year: 2019,
+    price: 14900, km: 78000, fuel: 'diesel', type: 'suv', seats: 7,
+    color: 'Bleu Céleste', transmission: 'Manuelle', power: 120,
+    aiMatch: 94, status: 'available',
+    img: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80',
+    imgs: [
+      'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80',
+    ],
+    desc: 'Peugeot 5008 7 places idéal pour les grandes familles. Deuxième rangée rabattable, coffre modulable 780L. Entretien suivi.',
+    features: ['7 places', 'GPS', 'Clim auto trizone', 'Caméra recul', 'Bluetooth', 'Régulateur vitesse', 'Toit panoramique']
+  },
+  {
+    id: 6, make: 'Dacia', model: 'Jogger Extreme', year: 2022,
+    price: 13500, km: 22000, fuel: 'hybride', type: 'suv', seats: 7,
+    color: 'Vert Khaki', transmission: 'Manuelle', power: 140,
+    aiMatch: 82, status: 'reserved',
+    img: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&q=80',
+    imgs: [
+      'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=800&q=80',
+    ],
+    desc: 'Dacia Jogger Hybrid 140 7 places. Excellent rapport qualité-prix. Très faible consommation hybride. Pratique et spacieux.',
+    features: ['Hybride 140ch', '7 places', 'Caméra recul', 'GPS 10"', 'Clim auto', 'Aide stationnement']
+  }
+];
+
+let currentVehicle = null;
+let filteredVehicles = [...VEHICLES];
+
+/* ══════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════ */
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+  if (name === 'home') renderFeatured();
+  if (name === 'search') renderSearchGrid(filteredVehicles);
+}
+
+/* ══════════════════════════════════════
+   RENDER VEHICLES
+══════════════════════════════════════ */
+function makeCard(v, withAI = false) {
+  const isReserved = v.status === 'reserved';
+  return `
+    <div class="v-card" onclick="openVehicle(${v.id})">
+      <div class="v-card-image">
+        <img src="${v.img}" alt="${v.make} ${v.model}" loading="lazy"
+          onerror="this.src='https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80'">
+        <div class="v-card-badge">
+          ${isReserved ? '<span class="badge badge-rouge">Réservé</span>' : '<span class="badge badge-vert">Disponible</span>'}
+        </div>
+        <div class="v-card-fav" onclick="event.stopPropagation();toggleFav(this)">♡</div>
+      </div>
+      <div class="v-card-body">
+        ${withAI ? `
+        <div class="ai-match" style="margin-bottom: 8px;">
+          <div class="ai-match-label"><span style="font-family:var(--mono);font-size:10px;color:var(--or);">Match IA</span><span style="font-family:var(--mono);font-size:10px;color:var(--or);">${v.aiMatch}%</span></div>
+          <div class="ai-bar"><div class="ai-bar-fill" style="width:${v.aiMatch}%"></div></div>
+        </div>` : ''}
+        <div class="v-card-name">${v.make} ${v.model}</div>
+        <div class="v-card-meta">${v.year} · ${formatKm(v.km)} · ${v.fuel}</div>
+        <div class="v-card-specs">
+          <span class="spec"><span class="spec-icon">⛽</span>${v.fuel}</span>
+          <span class="spec"><span class="spec-icon">🔧</span>${v.transmission}</span>
+          <span class="spec"><span class="spec-icon">👥</span>${v.seats} places</span>
+        </div>
+        <div class="v-card-footer">
+          <div>
+            <div class="v-price">${formatPrice(v.price)}</div>
+            <div class="v-deposit">Acompte ${formatPrice(v.price * 0.01)}</div>
+          </div>
+          ${!isReserved ? `<button class="btn-reserve" onclick="event.stopPropagation();openVehicle(${v.id})">Réserver →</button>` : `<span class="badge badge-rouge">Réservé</span>`}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderFeatured() {
+  const grid = document.getElementById('featured-grid');
+  if (grid) grid.innerHTML = VEHICLES.slice(0, 6).map(v => makeCard(v, true)).join('');
+}
+
+function renderSearchGrid(vehicles) {
+  const grid = document.getElementById('search-grid');
+  const count = document.getElementById('results-count');
+  if (grid) {
+    grid.innerHTML = vehicles.length ? vehicles.map(v => makeCard(v, true)).join('') :
+      '<div style="grid-column: 1/-1; text-align:center; padding: 48px; color: var(--texte-faint);">Aucun véhicule ne correspond à ces critères. Essayez d\'élargir la recherche.</div>';
+  }
+  if (count) count.textContent = vehicles.length;
+}
+
+/* ══════════════════════════════════════
+   SEARCH & FILTER
+══════════════════════════════════════ */
+function doHeroSearch() {
+  const q = document.getElementById('hero-search').value.trim();
+  if (!q) { showPage('search'); return; }
+  parseNLPSearch(q);
+  showPage('search');
+}
+
+function quickSearch(q) {
+  parseNLPSearch(q);
+  showPage('search');
+}
+
+function parseNLPSearch(query) {
+  const q = query.toLowerCase();
+  let budget = null, type = null, fuel = null;
+
+  const budgetMatch = q.match(/(\d[\d\s]*(?:k|000)?)/);
+  if (budgetMatch) {
+    let b = budgetMatch[1].replace(/\s/g, '');
+    if (b.endsWith('k')) b = b.replace('k', '000');
+    budget = parseInt(b);
+    if (budget < 1000) budget = budget * 1000;
+  }
+
+  if (/suv|crossover|4x4/.test(q)) type = 'suv';
+  else if (/famili|7 place|monospace/.test(q)) type = 'suv';
+  else if (/berline/.test(q)) type = 'berline';
+  else if (/citadine|ville/.test(q)) type = 'citadine';
+
+  if (/electri/.test(q)) fuel = 'electrique';
+  else if (/hybrid/.test(q)) fuel = 'hybride';
+  else if (/diesel/.test(q)) fuel = 'diesel';
+  else if (/essence/.test(q)) fuel = 'essence';
+
+  let results = VEHICLES.filter(v => {
+    if (budget && v.price > budget * 1.05) return false;
+    if (type && v.type !== type) return false;
+    if (fuel && v.fuel !== fuel) return false;
+    return true;
+  });
+
+  if (results.length < 2) results = VEHICLES;
+
+  filteredVehicles = results;
+  const aiBanner = document.getElementById('ai-banner');
+  const label = document.getElementById('ai-query-label');
+  if (aiBanner && label) {
+    aiBanner.classList.remove('hidden');
+    label.textContent = query;
+  }
+  renderSearchGrid(results);
+}
+
+function filterVehicles() {
+  const budget = document.getElementById('f-budget').value;
+  const type = document.getElementById('f-type').value;
+  const fuel = document.getElementById('f-fuel').value;
+  const km = document.getElementById('f-km').value;
+  const query = document.getElementById('f-query').value.toLowerCase();
+
+  filteredVehicles = VEHICLES.filter(v => {
+    if (budget && v.price > parseInt(budget)) return false;
+    if (type && v.type !== type) return false;
+    if (fuel && v.fuel !== fuel) return false;
+    if (km && v.km > parseInt(km)) return false;
+    if (query && !`${v.make} ${v.model} ${v.desc}`.toLowerCase().includes(query)) return false;
+    return true;
+  });
+
+  document.getElementById('ai-banner')?.classList.add('hidden');
+  renderSearchGrid(filteredVehicles);
+}
+
+function sortVehicles(mode) {
+  const arr = [...filteredVehicles];
+  if (mode === 'price_asc') arr.sort((a,b) => a.price - b.price);
+  else if (mode === 'price_desc') arr.sort((a,b) => b.price - a.price);
+  else if (mode === 'km_asc') arr.sort((a,b) => a.km - b.km);
+  else if (mode === 'match_desc') arr.sort((a,b) => b.aiMatch - a.aiMatch);
+  renderSearchGrid(arr);
+}
+
+/* ══════════════════════════════════════
+   VEHICLE DETAIL
+══════════════════════════════════════ */
+function openVehicle(id) {
+  currentVehicle = VEHICLES.find(v => v.id === id);
+  if (!currentVehicle) return;
+  const v = currentVehicle;
+
+  document.getElementById('vp-main-img').src = v.imgs[0];
+  document.getElementById('vp-main-img').onerror = function() { this.src = 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&q=80'; }
+  document.getElementById('vp-make').textContent = v.make;
+  document.getElementById('vp-name').textContent = v.model + ' ' + v.year;
+  document.getElementById('vp-price').textContent = formatPrice(v.price);
+  document.getElementById('vp-deposit').textContent = formatPrice(v.price * 0.01);
+  document.getElementById('vp-ai-pct').textContent = v.aiMatch + '%';
+  setTimeout(() => { document.getElementById('vp-ai-bar').style.width = v.aiMatch + '%'; }, 100);
+  document.getElementById('vp-desc-text').textContent = v.desc;
+
+  const thumbs = document.getElementById('vp-thumbs');
+  thumbs.innerHTML = v.imgs.map((img, i) =>
+    `<div class="vp-thumb ${i===0?'active':''}" onclick="changeMainImg('${img}', this)">
+       <img src="${img}" onerror="this.src='https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=400&q=60'">
+     </div>`
+  ).join('');
+
+  const specs = [
+    ['Kilométrage', formatKm(v.km)],
+    ['Carburant', v.fuel],
+    ['Transmission', v.transmission],
+    ['Puissance', v.power + ' ch'],
+    ['Couleur', v.color],
+    ['Places', v.seats],
+    ['Catégorie', v.type.toUpperCase()],
+    ['Année', v.year]
+  ];
+
+  document.getElementById('vp-specs-grid').innerHTML = specs.map(([k,val]) =>
+    `<div class="vp-spec-item"><div class="vp-spec-key">${k}</div><div class="vp-spec-val">${val}</div></div>`
+  ).join('');
+
+  document.getElementById('vp-features').innerHTML = v.features.map(f =>
+    `<span class="feature-tag">${f}</span>`
+  ).join('');
+
+  showPage('vehicle');
+}
+
+function changeMainImg(src, el) {
+  document.getElementById('vp-main-img').src = src;
+  document.querySelectorAll('.vp-thumb').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function toggleService(el) {
+  el.classList.toggle('checked');
+  const name = el.querySelector('strong').textContent;
+  toast(el.classList.contains('checked') ? `✓ ${name} ajouté` : `${name} retiré`);
+}
+
+/* ══════════════════════════════════════
+   RESERVATION
+══════════════════════════════════════ */
+function goToReservation() {
+  if (!currentVehicle) return;
+  const v = currentVehicle;
+  const dep = v.price * 0.01;
+
+  document.getElementById('sum-img').src = v.imgs[0];
+  document.getElementById('sum-name').textContent = `${v.make} ${v.model}`;
+  document.getElementById('sum-meta').textContent = `${v.year} · ${formatKm(v.km)} · ${v.fuel}`;
+  document.getElementById('sum-price').textContent = formatPrice(v.price);
+  document.getElementById('sum-deposit').textContent = formatPrice(dep);
+  document.getElementById('sum-total').textContent = formatPrice(dep);
+  document.getElementById('pay-amount').textContent = formatPrice(dep);
+
+  document.getElementById('form-step-1').classList.remove('hidden');
+  document.getElementById('form-step-2').classList.add('hidden');
+  document.getElementById('step1').className = 'res-step active';
+  document.getElementById('step2').className = 'res-step';
+  document.getElementById('step3').className = 'res-step';
+
+  showPage('reservation');
+}
+
+function goToPayment() {
+  const prenom = document.getElementById('f-prenom').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  if (!prenom || !email) { toast('⚠️ Veuillez remplir vos informations'); return; }
+
+  document.getElementById('form-step-1').classList.add('hidden');
+  document.getElementById('form-step-2').classList.remove('hidden');
+  document.getElementById('step1').className = 'res-step done';
+  document.getElementById('step2').className = 'res-step active';
+}
+
+function selectPM(mode) {
+  document.querySelectorAll('.pm-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('pm-' + mode).classList.add('active');
+  document.getElementById('pm-cb-widget').classList.toggle('hidden', mode !== 'cb');
+  document.getElementById('pm-other-widget').classList.toggle('hidden', mode === 'cb');
+}
+
+function simulatePay() {
+  const btn = document.getElementById('pay-btn');
+  btn.textContent = '⏳ Traitement en cours…';
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+
+  setTimeout(() => {
+    if (!currentVehicle) return;
+    const v = currentVehicle;
+    const resNum = 'AL-2026-' + Math.floor(1000 + Math.random() * 9000);
+
+    document.getElementById('res-num').textContent = resNum;
+    document.getElementById('confirm-veh').textContent = `${v.make} ${v.model} ${v.year}`;
+    document.getElementById('confirm-dep').textContent = formatPrice(v.price * 0.01);
+
+    document.getElementById('step2').className = 'res-step done';
+    document.getElementById('step3').className = 'res-step done';
+
+    startCountdown();
+    showPage('confirm');
+
+    btn.textContent = '🔒 Payer';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }, 2200);
+}
+
+/* ══════════════════════════════════════
+   COUNTDOWN
+══════════════════════════════════════ */
+let countdownInterval;
+function startCountdown() {
+  clearInterval(countdownInterval);
+  let total = 48 * 3600;
+  countdownInterval = setInterval(() => {
+    if (total <= 0) { clearInterval(countdownInterval); return; }
+    total--;
+    const h = String(Math.floor(total / 3600)).padStart(2, '0');
+    const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+    const s = String(total % 60).padStart(2, '0');
+    const el = document.getElementById('countdown');
+    if (el) el.textContent = `${h}:${m}:${s}`;
+  }, 1000);
+}
+
+/* ══════════════════════════════════════
+   UTILS
+══════════════════════════════════════ */
+function formatPrice(p) {
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(p);
+}
+
+function formatKm(km) {
+  return new Intl.NumberFormat('fr-FR').format(km) + ' km';
+}
+
+function toggleFav(el) {
+  const isFav = el.textContent === '♥';
+  el.textContent = isFav ? '♡' : '♥';
+  el.style.color = isFav ? '' : '#e84040';
+  toast(isFav ? 'Retiré des favoris' : '❤️ Ajouté aux favoris');
+}
+
+function formatCard(input) {
+  let v = input.value.replace(/\D/g, '').substring(0, 16);
+  input.value = v.replace(/(.{4})/g, '$1 ').trim();
+}
+
+let toastTimeout;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  const txt = document.getElementById('toast-text');
+  txt.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  renderFeatured();
+  renderSearchGrid(VEHICLES);
+});
+</script>
+</body>
+</html>
